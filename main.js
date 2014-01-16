@@ -22,6 +22,7 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
+/* global $, define, brackets */
 
 define(function (require, exports, module) {
     "use strict";
@@ -55,7 +56,6 @@ define(function (require, exports, module) {
             Resizer.hide($tomcatManager);
         }
     }
-
 
     function registerMenu() {
         // Look for the menu where we will be inserting our theme menu

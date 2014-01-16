@@ -22,14 +22,14 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
+/* global require, process, define, brackets, $, exports, instance, console */
 
 (function() {
     "use strict";
 
-    var os            = require("os"),
-        child_process = require("child_process");
-
-    var _domainManager;
+    var os             = require("os"),
+        child_process  = require("child_process"),
+        _domainManager;
 
 
     /**
@@ -52,10 +52,21 @@
 
         // Pass in run so that we can capture stdout and stderr messages
         if ( os.platform() === "win32" ) {
-            child = child_process.spawn("cmd", ["/c", "bin\\catalina.bat", "run"], {cwd: settings.AppServer.path, env: process.env});
-        }
-        else {
-            child = child_process.spawn("sh", ["./bin/catalina.sh", "run"], {cwd: settings.AppServer.path, env: process.env});
+            child = child_process.spawn( 
+                    "cmd", 
+                    ["/c", "bin\\catalina.bat", "run"], 
+                    {
+                        cwd: settings.AppServer.path,
+                        env: process.env
+                    } );
+        } else {
+            child = child_process.spawn(
+                    "sh", 
+                    ["./bin/catalina.sh", "run"], 
+                    {
+                        cwd: settings.AppServer.path, 
+                        env: process.env
+                    } );
         }
 
         registerServer(child);
@@ -76,7 +87,13 @@
         var child;
 
         if ( os.platform() === "win32" ) {
-            child = child_process.spawn("cmd", ["/c", "bin\\catalina.bat", "stop"], {cwd: instance.AppServer.path, env: process.env});
+            child = child_process.spawn(
+                    "cmd", 
+                    ["/c", "bin\\catalina.bat", "stop"], 
+                    {
+                        cwd: instance.AppServer.path, 
+                        env: process.env
+                    } );
         }
         else {
             child = child_process.spawn("sh", ["./bin/catalina.sh", "stop"], {cwd: instance.AppServer.path, env: process.env});
@@ -89,7 +106,7 @@
                 _domainManager.emitEvent("tomcat", "message", [instance.pid, true, messages[i]]);
             }
         });
-
+		
         child.stdout.on("data", function(data) {
             var messages = parseMessage(data);
             
@@ -98,6 +115,27 @@
             }
         });
 
+        return true;
+    }
+	
+    function cmdCopyFiles( source, destination) {
+        var exec = child_process.exec,
+            child,
+            cmdStr;
+        
+        if ( os.platform() === "win32" ) {
+            cmdStr = 'xcopy /i /c /e /h /r /k /y "' + source + '" "' + destination + '"';
+            //console.log( cmdStr );
+            
+            child = exec( cmdStr, function (error, stdout, stderr) {
+                console.log('stdout: ' + stdout);
+                console.log('stderr: ' + stderr);
+                if ( error !== null ) {
+                    console.log('exec error: ' + error);
+                }
+            });
+        }
+        
         return true;
     }
 
@@ -172,7 +210,14 @@
                 _domainManager.emitEvent("tomcat", "message", [server.pid, message]);
     
                 if ( starting ) {
-                    if ( message.type === "INFO" && message.text.indexOf("Server startup in") === 0 ) {
+                    if ( message.text.indexOf("Server startup in") > -1 ) {
+                        
+                        // trigger startup succesfull
+                        starting = false;
+                        _domainManager.emitEvent("tomcat", "started", [server.pid, true, message]);
+                    } else if ( message.type === "INFO" && 
+                               message.text.indexOf("Server startup in") === 0 ) {
+                        
                         // trigger startup succesfull
                         starting = false;
                         _domainManager.emitEvent("tomcat", "started", [server.pid, true, message]);
@@ -186,19 +231,27 @@
             }
         });
 
-        server.stdout.on("data", function(data) {
+        server.stdout.on( "data", function(data) {
+            
             // Not sure why stdout isn't getting any of the startup messages
             // that aren't errors...
             var messages = parseMessage(data);
-
+            
             for ( var i in messages ) {
-                _domainManager.emitEvent("tomcat", "message", [server.pid, messages[i]]);
+                _domainManager.emitEvent( "tomcat", "message", [server.pid, messages[i]] );
+                
+                if ( starting && messages[i].text.indexOf( "Server startup in" ) > -1 ) {
+                    
+                    // trigger startup succesfull
+                    starting = false;
+                    _domainManager.emitEvent( "tomcat", "started", [server.pid, true, messages[i]] );
+                }
             }
-        });
+        } );
 
-        server.on("close", function(code, signal) {
+        server.on( "close", function(code, signal) {
             _domainManager.emitEvent("tomcat", "stopped", [server.pid, code, signal]);
-        });        
+        } );        
     }
 
 
@@ -240,7 +293,13 @@
             cmdGetStatus,   // command handler function
             false           // this command is synchronous
         );
-
+        
+        _domainManager.registerCommand(
+            "tomcat",       // domain name
+            "copyFiles",    // command name
+            cmdCopyFiles,   // command handler function
+            false           // this command is synchronous
+        );
 
         _domainManager.registerEvent(
             "tomcat",
@@ -256,7 +315,6 @@
             "tomcat",
             "message"
         );
-        
     }
 
     exports.init = init;

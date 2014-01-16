@@ -22,14 +22,15 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-
+/* global define, brackets, Mustache, $, setTimeout */
 define( function(require, exports, module) {
     "use strict";
 
-    var tomcat           = require("../Tomcat"),
-        configurations   = require("../ConfigurationManager");
-
-    var tmpl = {
+    var ProjectManager   = brackets.getModule( 'project/ProjectManager' ),
+	tomcat           = require("../Tomcat"),
+	configurations   = require("../ConfigurationManager"),
+	
+	tmpl = {
         tomcatManager: require("text!views/tomcatManager.html"),
         console: require("text!views/console.html"),
         consoleMessage: require("text!views/consoleMessage.html"),
@@ -105,6 +106,14 @@ define( function(require, exports, module) {
         var server = configurations.getServer(_selectedServer);
         return tomcat.stop( server );
     }
+	
+    function copyToTomcat(widget) {
+        var server = configurations.getServer(_selectedServer);
+        return tomcat.copyToTomcat( 
+                server,
+                ProjectManager.getProjectRoot().fullPath,
+                ProjectManager.getProjectRoot().name );
+    }
 
 
     function clearConsole(widget) {
@@ -162,6 +171,7 @@ define( function(require, exports, module) {
 
         _self.on("click.tomcatManager", ".start", function() {start(widget);})
             .on("click.tomcatManager", ".stop", function() {stop(widget);})
+            .on("click.tomcatManager", "#copyToTomcat", function() {copyToTomcat(widget);})
             .on("click.tomcatManager", ".clearConsole", function() {clearConsole(widget);})
             .change("select.serverList", function() {selectServer(widget);});
 

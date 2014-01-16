@@ -22,6 +22,8 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
+/* global $, define, brackets, console */
+
 define(function(require, exports, module) {
     "use strict";
 
@@ -67,6 +69,13 @@ define(function(require, exports, module) {
         });
     }
 
+	function copyToTomcat( server, path, destination ) {
+		var AppServer = configurations.getAppServer(server),
+			dest = AppServer.path + "webapps/" + destination;
+        return _connection.domains.tomcat.copyFiles( 
+			path.substring(0, path.length - 1),  
+			dest );
+	}
 
     function start( server ) {
         var AppServer = configurations.getAppServer(server);
@@ -210,6 +219,7 @@ define(function(require, exports, module) {
         ready: initNodeConnetion().then(init).done,
         start: start,
         stop: stop,
+        copyToTomcat: copyToTomcat,
         getStatus: getStatus
     };
 });

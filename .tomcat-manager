@@ -1,7 +1,7 @@
 {
     "Servers": {
         "Local Server 1": {
-            "AppServer": "apache-7.40"
+            "AppServer": "apache-tomcat-7.0.37"
         },
         "Local Server 2": {
             "extra-options": "nothing",
@@ -9,9 +9,9 @@
         }
     },
     "AppServers": {
-        "apache-7.40": {
+        "apache-tomcat-7.0.37": {
             "type": "tomcat",
-            "path": "/Users/MiguelCastillo/Documents/apache-tomcat-7.0.40"
+            "path": "D:/apache-tomcat-7.0.37/"
         }
     }
 }
